@@ -86,6 +86,31 @@ export class MenuItemsService {
     ]
   */
   async getMenuItems() {
-    throw new Error('TODO in task 3');
+    let result : MenuItem[] = await this.menuItemRepository.find({});
+
+    let self = this;
+    let finalResult = result.filter((obj) => obj.parentId === null).map( async (menuItem) => {
+        menuItem.children = [];
+        let children = await self.getChild(menuItem.id, result);
+        menuItem.children?.push(...children);
+        return menuItem;
+    });
+    
+    return await Promise.all(finalResult);
+  }
+
+  async getChild(menuItemId : number , dataSet : MenuItem[]) : Promise<MenuItem[]> {
+    let children : MenuItem[] = [];
+    
+    let child = dataSet.filter((data) => data.parentId === menuItemId)!;
+
+    child.map(async (obj) => {
+        obj.children = [];
+        obj.children.push(...await this.getChild(obj.id , dataSet));
+    });
+
+    children.push(...child);
+
+    return children;
   }
 }
